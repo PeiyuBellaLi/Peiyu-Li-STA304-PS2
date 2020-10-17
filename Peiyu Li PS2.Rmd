@@ -1,0 +1,162 @@
+---
+title: "STA304 PS2"
+author: "Peiyu Li"
+date: "October 19, 2020"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F)
+setwd("~/Desktop/PS2")
+library(tidyverse)
+library(brms)
+library(survey)
+dataset <- read.csv("gss.csv",header = TRUE)
+family <- dataset %>% select(income_family, feelings_life, self_rated_mental_health,province) %>% na.omit()
+attach(family)
+family$income_family<-as.factor(family$income_family)
+family$self_rated_mental_health<-as.factor(family$self_rated_mental_health)
+```
+
+## Life Satisfaction Analysis using Linear Regression Model
+
+# Peiyu Li 
+# October 17, 2020
+
+## Abstract
+The family data collected by The General Social Survey(GSS) in 2017 used sample selected from 10 provinces within Canada, and one thing that was closely linked with their subjective was people's feelings about lives. There might be many factors affect people's feelings, but the variables i interested in were their family income and their self rated mental health. For some families, most of the troubles were due to money, and that was the reason why i think this factor could affect life satisfaction. Also, mental health problem could directly decides people's expectation for their lives, which should not be ignored. These let me to investigate people's feelings about lives, and hope this could provide more information on some specific social policy issues that relate with this topic, and also help people to be aware of the factors that could potentially lower their life satisfaction.
+
+I obtained the GSS data from the CHASS website. The data was collected from people selected from 10 provinces in Canada using stratified method. Since it was a very large dataset, it could not be done in a perfect way, and the advantages and disadvantages will be discussed in the data section.
+
+I used three variables(feelings_life,family_income,and self_rated_mental_health) to fit into a linear model based on the survey method. The model in general was significant which means it could be useful to see how people's life satisfaction changes as the other two factors changes, and even could help us to predict one's life satisfaction. However, a linear model might not be a best choice though it was still good enough at this point. The future studies could includes more predictor variables and even try other model such as Bayesian to make this study better.
+
+## Introduction
+The General Social Survey(GSS) conducted in 2017 collected data about family which included the family income, mental health, and the respondents' feelings about life as a whole. The objectives for the GSS to collect those data were to modify the living conditions of Canadians and helped to provide information on specific policy. The sample was randomly selected from all non-institutionalized persons 15 years of age and older within 10 provinces of Canada.
+
+The goal for this analysis was to see if people's feelings about their life are related with their mental health and family income. This topic would be benefit to monitor changes in order to increase the life satisfaction for people living in Canada. Although, life satisfaction depends not only on the income and mental health, but also depends on other factors such as education level, marriages, and social relationships. It is still interesting to learn about how the income level and mental health are related with life satisfaction. 
+
+A linear model would be built and discussed as well as how the survey was conducted. I would also discuss the survey, data, and interpret the model in the following parts.
+
+## Data
+The data I got from the GSS contains over 20,000 observations and 81 variables. The data was collecting by asking people to take a computer assisted telephone interviews, and those who were selected to be the respondents could choice their preference language. If someone refused to do the interview or did not answer the phone, they would be contacted several times later. When non-response occurred, respondents could choose to valid skip or not stated or refuse to answer except for questions that are required for weighting (age, sex, etc.). 
+
+The target population for this survey included people who are 15 years old or older and except for full-time residents of institutions or people who lived in Yukon, Northwest Territories, and Nunavut. The frame was a list contained telephone numbers(both landline and cellular) and address for the target population. Also, the sample was people who were selected from each subgroups of the target population frame by their records.  
+
+In general, they used the stratified sampling method. They first assigned the records to strata within each province, and randomly selected samples within each stratum. The advantage of using stratified sampling could be that the sample selected from each stratum were representatives of the target population, since it made sure that people from all different regions in Canada had the chance to be selected and take this survey. It contained lots of information that could be use to do many analysis from different aspects. 
+
+However, their were 14% of telephone numbers not linked to the Address Register in the frame, it was hard to divide those records into different strata based on province. This survey took about 10 month to be conducted, which was a very long period of time that also cost lots of people to do it. Since the target population is very large, they had to use some other data such as the Census of population, which made the data to be messy before cleaning.
+
+## Model
+```{r,include=F}
+N = 30302287
+n=length(family$income_family)
+family <- family %>% 
+  mutate(fpc=ifelse(province=='Quebec',7039221,
+                     ifelse(province=='Ontario',11593655,
+                            ifelse(province=='British Columbia',4005962,
+                                   ifelse(province=='Alberta',3505975,
+                                          ifelse(province=='Manitoba',1103003,
+                                                 ifelse(province=='Saskatchewan',945431,
+                                                        ifelse(province=='Nova Scotia',796950,
+                                                               ifelse(province=='New Brunswick',645439,
+                                                                      ifelse(province=='Newfoundland and Labrador',448474,
+                                                                             ifelse(province=='Prince Edward Island',124239,0)))))))))))
+
+family$income_family <- factor(family$income_family, levels = c("Less than $25,000", "$25,000 to $49,999", "$50,000 to $74,999", "$75,000 to $99,999", "$100,000 to $ 124,999", "$125,000 and more"))
+family$self_rated_mental_health <- factor(family$self_rated_mental_health, levels =c("Excellent","Very good","Good","Fair","Poor","Don't know") )
+
+family.design<-svydesign(id=~1, strata=~province,data=family,fpc=~fpc)
+mod <- svyglm(feelings_life~income_family+self_rated_mental_health,family.design, family="gaussian")
+summary.lm(mod)
+```
+
+In order to get an better idea on how i can explained the relationships on those three variables, I built a multiple linear regression model based on the stratified sampling method. Since the variable feelings_life was ranged from 0 to 10, I could treat it as a numerical variable which mean it would give a numeric outcome value. Both income_family and self_rated_health are categorical variables which mean they contain several levels as input values. A multiple linear model means I could use more than one predictors both numerical or categorical to predict a numerical response. 
+
+The Finite Population Correction(FPC) is needed when the sample is selected without replacement from a finite population. Since the GSS used stratified sampling (ie. sampled based on 10 provinces), i needed to adjust FPC by adding a new variable called 'fpc' that specified the population in the province that the observations sampled from. The GSS data user guide said their target population is 30,302,287, and I calculate the target population within each province by multiplied this number to different proportions for each province of the Canadian population.
+
+After fitted a linear model based on the survey, I got the following formula, 
+
+*feelings_life = $\beta_{0}$ + $\beta_{1}$income_family$25,000 to $49,999 + $\beta_{2}$income_family$50,000 to $74,999 + $\beta_{3}$income_family$75,000 to $99,999 + $\beta_{4}$income_family$100,000 to $124,000 + $\beta_{5}$income_family $125,000 and more + $\beta_{6}$self_rated_mental_health Very Good + $\beta_{7}$self_rated_mental_health Good + $\beta_{8}$self_rated_mental_health Fair + $\beta_{9}$self_rated_mental_health Poor + $\beta_{10}$self_rated_mental_health Don't Know*  
+
+The drawbacks for this model is that it could only be used with people who live in Canada based on the target population. It is also insufficient to predict life satisfaction just based on these two predictors. This model can be used to predict one's life satisfaction using family income and mental health level, but there must have other factors affect feelings about life.
+
+The model assumptions and how good the model is will be discuss in the next section.
+
+## Results
+Figure 1 and 2 in Appendix shows the box plots for the two predictors and the response variable. In Figure 1, we can see the medians for life satisfaction level for people with different family income are the same, and I cannot see a clear relationship between family income and feelings about life. However, in Figure 2 it is obvious that as people's mental health level decreases, the median life satisfaction level decreases, except for people who don't know about their mental health status. 
+
+After fitting a linear model, I got the following summary table for each coefficient. 
+
+
+![Alt text](~/Desktop/PS2/Table1.jpg)
+
+The estimate intercept ($\beta_{0}$) means when the family_income is Less than Less than \$25,000, the self_rated_mental_health is 'Excellent', then the feelings_life is around 8.44. The model treated the two predictor variables as dummy variables, and the baselines are income_family less than \$25,000 and the self_rated_mental_health is 'Excellent'. As a result, the coefficient for 'family_income \$25,000 to \$49,000' can be interpreted as when the family income increases from less than \$25,000 to between \$25,000 to \$49,000, the life satisfaction increases by 0.245. In a similar way, the coefficient for self_rated_mental_health 'Very Good' can be interpreted as when the self rated mental health level changes from 'Excellent' to 'Very Good', the life satisfaction of that person will be decreased by -0.556.
+
+The overall p-value for this model is less than 2.2e-16 (<0.05) which is very significant. This means I have enough evidence to say that this model is useful and meaningful in this case. Also notice that the p-value for each predictors are also very significant, which indicates as the predictor changes the response variable will also change. In other words, all the variables in this model are meaningful and strong enough to affect one's life satisfaction. The R-squared for this model is 0.2497, which means this model can explain 24.97% variation in feelings about life. This is good enough though it is not too high.
+
+To check the model assumptions, I plot the following residual plot and the Normal Q-Q plot. From the residual plots, the points are mostly equally spread around the line. However, since the response variable are discrete numbers only ranges from 0 to 10, it is hard to see the clear trend. Thus it is not appropriate to say it has a constant variance or is acceptable to use linear model. The normal QQ plot indicates it is not very reasonable to use linear model, because the right and left part of the points do not distributed around the line though the middle part are lined well on the line. 
+
+```{r,echo=F}
+plot(mod,3)
+qqnorm(rstandard(mod))
+qqline(rstandard(mod))
+```
+
+## Discussion
+From the linear model i built, it shows as the family income level increases, the feelings about life will also increases, and as the self rated mental health level decreases, the feelings about life will also decreases. So the assumption I had when I see the two box plots before is approved. The small p-values suggests this model is meaningful, and the R-squared indicates it can explain around 25% of the variation. It is good enough though the value is small. However, the model assumption for linear model seems not good in this case. The result suggest that maybe I should try to transform the data in order to use linear model better, or I could just use another model to fit the data.
+
+Since the model is still significant, it can provide information to both policy makers and Canadians. They can get an better idea on how their feelings about life as a whole could be affected by their family income and mental health status. The income in a family did have an effect on their life satisfaction as suggest in this model, but from Figure 1 we can see most people are satisfied and have a high median life satisfaction for all income levels. Also, it remind people that mental health issues are very important to their lives. If people feel their mental health status is low, they should better go to see their psychologists or try other methods to deal with the issues.
+
+# Weaknesses
+According to the model assumption check, this model is not good enough though all the variables are significant. In the small world, life satisfaction have strong correlation with both family income and mental health problem. However, in the big world, there must be some other factors that are related with life satisfaction and maybe a third variable is taking place. The information provided here is limited because life satisfaction is a really general thing that can't be explained perfectly just using two variables.
+
+The data itself is also not perfect due to various reasons. According to the GSS user guide, they only collected 82.6% of households' family income value. The family income for respondents who did not answer was imputed. The overall response rate for the survey was 52.4% which is not high, and therefore many missing value in the raw data set.
+
+# Next Steps
+Since the model assumptions here did not pass, the next step could be using data transformation method to see if it improve the performance of linear model. Another option is to use other models such as Bayesian that may fit better to the data. It's also a good idea to include more predictors from the GSS data and do a more complicated model, and this can help to explain how people's life satisfaction change based on more factors.
+
+In order to make this topic more meaningful and useful, another survey could be done. The survey questions can narrow down to some more specific questions that are related to feelings about life. It can be implemented not only in Canada but also in some other countries if the cost is affordable. In this way, it can further benefit to monitor changes worldwild in order to increase people's life satisfaction.
+
+
+## References
+Alexander,R.,& Caetano, S. (2020). *gss_cleaning.R*. https://q.utoronto.ca/courses/184060/modules/items/1867317 
+
+Bürkner, P. (2017). brms: An R Package for Bayesian Multilevel Models Using Stan. Journal of Statistical Software, 80(1), 1-28. doi:10.18637/jss.v080.i01
+
+Lumley,T. (2020) "survey: analysis of complex survey samples". R package version 4.0.
+
+Pareto, A. (2015). How to add an image to markdown. https://rpubs.com/RatherBit/90926
+
+Statistics Canada. (2020). 2017 General Social Survey: Families Cycle 31: Public Use Microdata File. Using CHASS (distributor). https://sda-artsci-utoronto-ca.myaccess.library.utoronto.ca/sdaweb/dli2/gss/gss31/gss31/more_doc/GSS31_Codebook.pdf 
+
+Statistics Canada. (2020). General Social Survey, Cycle 31: Families, Public Use Microdata File Documentation and User's Guide. Using CHASS (distributor). https://sda-artsci-utoronto-ca.myaccess.library.utoronto.ca/sdaweb/dli2/gss/gss31/gss31/more_doc/GSS31_User_Guide.pdf 
+
+Statistics Canada. (2020). Table 051-0005:Estimates of population, Canada, provinces and territories. http://www5.statcan.gc.ca/cansim/a26?lang=eng&retrLang=eng&id=0510005&paSer=&pattern=&stByVal=1&p1=1&p2=31&tabMode=dataTable&csid=
+
+Wickham et al., (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43), 1686, https://doi.org/10.21105/joss.01686 
+
+## Appendix
+```{r, echo=F}
+family$income_family <- factor(family$income_family, levels = c("Less than $25,000", "$25,000 to $49,999", "$50,000 to $74,999", "$75,000 to $99,999", "$100,000 to $ 124,999", "$125,000 and more"))
+
+family$self_rated_mental_health <- factor(family$self_rated_mental_health, levels =c("Excellent","Very good","Good","Fair","Poor","Don't know") )
+
+boxplot(feelings_life~income_family,
+        data=family,
+        main='Figure 1',
+        xlab='Family income - Total(before tax)',
+        ylab='Feelings about life as a whole',
+        col='orange',
+        border='brown')
+
+boxplot(feelings_life~self_rated_mental_health,
+        data=family,
+        main='Figure 2',
+        xlab='Self rated mental health',
+        ylab='Feelings about life as a whole',
+        col='orange',
+        border='brown')
+```
