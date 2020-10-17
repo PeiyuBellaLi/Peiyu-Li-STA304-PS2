@@ -86,12 +86,12 @@ The drawbacks for this model is that it could only be used with people who live 
 The model assumptions and how good the model is will be discuss in the next section.
 
 ## Results
-Figure 1 and 2 in Appendix shows the box plots for the two predictors and the response variable. In Figure 1, we can see the medians for life satisfaction level for people with different family income are the same, and I cannot see a clear relationship between family income and feelings about life. However, in Figure 2 it is obvious that as people's mental health level decreases, the median life satisfaction level decreases, except for people who don't know about their mental health status. 
+Figure 2 and 3 in Appendix shows the box plots for the two predictors and the response variable. In Figure 2, we can see the medians for life satisfaction level for people with different family income are the same, and I cannot see a clear relationship between family income and feelings about life. However, in Figure 3 it is obvious that as people's mental health level decreases, the median life satisfaction level decreases, except for people who don't know about their mental health status. 
 
 After fitting a linear model, I got the following summary table for each coefficient. 
 
 
-![Alt text](~/Desktop/PS2/Table1.jpg)
+![Summary of the model](~/Desktop/PS2/Table1.jpg)
 
 The estimate intercept ($\beta_{0}$) means when the family_income is Less than Less than \$25,000, the self_rated_mental_health is 'Excellent', then the feelings_life is around 8.44. The model treated the two predictor variables as dummy variables, and the baselines are income_family less than \$25,000 and the self_rated_mental_health is 'Excellent'. As a result, the coefficient for 'family_income \$25,000 to \$49,000' can be interpreted as when the family income increases from less than \$25,000 to between \$25,000 to \$49,000, the life satisfaction increases by 0.245. In a similar way, the coefficient for self_rated_mental_health 'Very Good' can be interpreted as when the self rated mental health level changes from 'Excellent' to 'Very Good', the life satisfaction of that person will be decreased by -0.556.
 
@@ -105,23 +105,23 @@ qqnorm(rstandard(mod))
 qqline(rstandard(mod))
 ```
 
-## Discussion
+# Discussion
 From the linear model i built, it shows as the family income level increases, the feelings about life will also increases, and as the self rated mental health level decreases, the feelings about life will also decreases. So the assumption I had when I see the two box plots before is approved. The small p-values suggests this model is meaningful, and the R-squared indicates it can explain around 25% of the variation. It is good enough though the value is small. However, the model assumption for linear model seems not good in this case. The result suggest that maybe I should try to transform the data in order to use linear model better, or I could just use another model to fit the data.
 
 Since the model is still significant, it can provide information to both policy makers and Canadians. They can get an better idea on how their feelings about life as a whole could be affected by their family income and mental health status. The income in a family did have an effect on their life satisfaction as suggest in this model, but from Figure 1 we can see most people are satisfied and have a high median life satisfaction for all income levels. Also, it remind people that mental health issues are very important to their lives. If people feel their mental health status is low, they should better go to see their psychologists or try other methods to deal with the issues.
 
-# Weaknesses
+## Weaknesses
 According to the model assumption check, this model is not good enough though all the variables are significant. In the small world, life satisfaction have strong correlation with both family income and mental health problem. However, in the big world, there must be some other factors that are related with life satisfaction and maybe a third variable is taking place. The information provided here is limited because life satisfaction is a really general thing that can't be explained perfectly just using two variables.
 
 The data itself is also not perfect due to various reasons. According to the GSS user guide, they only collected 82.6% of households' family income value. The family income for respondents who did not answer was imputed. The overall response rate for the survey was 52.4% which is not high, and therefore many missing value in the raw data set.
 
-# Next Steps
+## Next Steps
 Since the model assumptions here did not pass, the next step could be using data transformation method to see if it improve the performance of linear model. Another option is to use other models such as Bayesian that may fit better to the data. It's also a good idea to include more predictors from the GSS data and do a more complicated model, and this can help to explain how people's life satisfaction change based on more factors.
 
 In order to make this topic more meaningful and useful, another survey could be done. The survey questions can narrow down to some more specific questions that are related to feelings about life. It can be implemented not only in Canada but also in some other countries if the cost is affordable. In this way, it can further benefit to monitor changes worldwild in order to increase people's life satisfaction.
 
 
-## References
+# References
 Alexander,R.,& Caetano, S. (2020). *gss_cleaning.R*. https://q.utoronto.ca/courses/184060/modules/items/1867317 
 
 Bürkner, P. (2017). brms: An R Package for Bayesian Multilevel Models Using Stan. Journal of Statistical Software, 80(1), 1-28. doi:10.18637/jss.v080.i01
@@ -138,7 +138,8 @@ Statistics Canada. (2020). Table 051-0005:Estimates of population, Canada, provi
 
 Wickham et al., (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43), 1686, https://doi.org/10.21105/joss.01686 
 
-## Appendix
+# Appendix
+## link to GitHub repo: https://github.com/PeiyuBellaLi/Peiyu-Li-STA304-PS2 
 ```{r, echo=F}
 family$income_family <- factor(family$income_family, levels = c("Less than $25,000", "$25,000 to $49,999", "$50,000 to $74,999", "$75,000 to $99,999", "$100,000 to $ 124,999", "$125,000 and more"))
 
@@ -146,7 +147,7 @@ family$self_rated_mental_health <- factor(family$self_rated_mental_health, level
 
 boxplot(feelings_life~income_family,
         data=family,
-        main='Figure 1',
+        main='Figure 2',
         xlab='Family income - Total(before tax)',
         ylab='Feelings about life as a whole',
         col='orange',
@@ -154,7 +155,7 @@ boxplot(feelings_life~income_family,
 
 boxplot(feelings_life~self_rated_mental_health,
         data=family,
-        main='Figure 2',
+        main='Figure 3',
         xlab='Self rated mental health',
         ylab='Feelings about life as a whole',
         col='orange',
